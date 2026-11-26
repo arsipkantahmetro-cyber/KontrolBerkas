@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kontrol Berkas QR Code & Spreadsheet</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --primary: #1d4ed8;
+      --primary-hover: #1e40af;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #cbd5e1;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --warning: #b45309;
+      --warning-bg: #fffbeb;
+      --warning-border: #fcd34d;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); line-height: 1.5; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+    /* Login Card */
+    .login-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .login-card {
+      background: var(--card);
+      width: 100%;
+      max-width: 400px;
+      padding: 28px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      border: 1px solid var(--border);
+    }
+    .login-card h1 { font-size: 1.35rem; margin-bottom: 6px; }
+    .login-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+
+    /* Form Controls */
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: #fff;
+    }
+    input:disabled, select:disabled, textarea:disabled {
+      background: #f1f5f9;
+      color: var(--muted);
+      cursor: not-allowed;
+    }
+    input:focus, select:focus { outline: 2px solid rgba(29, 78, 216, 0.25); border-color: var(--primary); }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover:not(:disabled) { filter: brightness(0.92); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover:not(:disabled) { filter: brightness(0.92); }
+    .btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover:not(:disabled) { background: #f8fafc; }
+    .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+
+    /* Topbar */
+    .topbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .badge {
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-admin { background: #dbeafe; color: #1e40af; }
+    .badge-validasi { background: #fef3c7; color: #92400e; }
+    .badge-user { background: #dcfce7; color: #166534; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .tab-btn { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* Grid & Cards */
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 18px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .card h2 { font-size: 1.05rem; margin-bottom: 12px; }
+
+    #reader {
+      width: 100%;
+      min-height: 220px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f8fafc;
+      margin-bottom: 10px;
+    }
+
+    /* QR Code Preview Box */
+    .barcode-preview-box {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #f8fafc;
+      text-align: center;
+    }
+    .qr-render-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 96px;
+    }
+    .qr-render-box img,
+    .qr-render-box canvas {
+      max-width: 100%;
+      height: auto !important;
+      display: block;
+      margin: 0 auto;
+    }
+    .barcode-caption { font-size: 0.82rem; color: var(--muted); margin-top: 6px; }
+
+    /* Spreadsheet Table */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 8px 10px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    td.history-cell {
+      white-space: normal;
+      min-width: 260px;
+      max-width: 420px;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 700;
+      color: #334155;
+      position: sticky;
+      top: 0;
+    }
+    tr:hover td { background: #f8fafc; }
+
+    .field-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      background: #f8fafc;
+    }
+    .alert {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      margin-bottom: 12px;
+    }
+    .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .alert-warning { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
+    .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+    /* Modal Cetak Label */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+    .modal-card {
+      background: #fff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 720px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+    .modal-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+      margin-top: 12px;
+      padding: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .labels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    /* Ukuran Label Stiker Thermal */
+    .print-label {
+      border: 1.5px solid #0f172a;
+      border-radius: 6px;
+      padding: 8px;
+      background: #fff;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    .print-label-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0f172a;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .print-label .qr-render-box {
+      min-height: auto;
+      margin: 2px 0;
+    }
+    .print-label .qr-render-box img,
+    .print-label .qr-render-box canvas {
+      max-width: 100%;
+      max-height: 100%;
+    }
+    .print-label-sub {
+      font-size: 0.72rem;
+      color: #334155;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .size-50x30 .print-label { width: 50mm; height: 30mm; padding: 2mm; border-radius: 3px; }
+    .size-50x30 .print-label-title { font-size: 7pt; }
+    .size-50x30 .print-label-sub { font-size: 6pt; }
+
+    .size-60x40 .print-label { width: 60mm; height: 40mm; padding: 2.5mm; border-radius: 4px; }
+    .size-60x40 .print-label-title { font-size: 8pt; }
+    .size-60x40 .print-label-sub { font-size: 6.5pt; }
+
+    .size-80x50 .print-label { width: 80mm; height: 50mm; padding: 3mm; border-radius: 4px; }
+    .size-80x50 .print-label-title { font-size: 9pt; }
+    .size-80x50 .print-label-sub { font-size: 7.5pt; }
+
+    .hidden { display: none !important; }
+
+    @media print {
+      body { background: #fff !important; }
+      body > *:not(#printArea) { display: none !important; }
+      #printArea {
+        display: block !important;
+        padding: 0;
+        margin: 0;
+      }
+      #printArea.labels-grid {
+        display: grid;
+        gap: 4mm;
+        margin: 0;
+      }
+      #printArea.size-a4 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      #printArea.size-50x30,
+      #printArea.size-60x40,
+      #printArea.size-80x50 {
+        display: block;
+      }
+      #printArea.size-50x30 .print-label,
+      #printArea.size-60x40 .print-label,
+      #printArea.size-80x50 .print-label {
+        border: none;
+        page-break-after: always;
+        break-after: page;
+        margin: 0;
+      }
+      #printArea.size-50x30 .print-label:last-child,
+      #printArea.size-60x40 .print-label:last-child,
+      #printArea.size-80x50 .print-label:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HALAMAN LOGIN -->
+  <div id="loginView" class="login-wrapper">
+    <div class="login-card">
+      <h1>📁 Kontrol Berkas QR Code</h1>
+      <p>Masuk sesuai role untuk memindai, mencetak label QR Code, dan mengelola spreadsheet berkas.</p>
+
+      <div id="loginError" class="alert alert-error hidden"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="roleSelect">Pilih Role</label>
+          <select id="roleSelect" required>
+            <option value="user">User Terdaftar (Scan Posisi & Keterangan)</option>
+            <option value="validasi">Validasi (Input & Validasi Berkas)</option>
+            <option value="admin">Admin (Full Akses, User, Kolom & Password)</option>
+          </select>
+        </div>
+        <div id="loginUsernameGroup" class="form-group">
+          <label for="usernameInput">Nama User Terdaftar</label>
+          <input type="text" id="usernameInput" placeholder="Masukkan nama user terdaftar..." />
+        </div>
+        <div class="form-group">
+          <label for="passwordInput">Password</label>
+          <input type="password" id="passwordInput" placeholder="Masukkan password..." required />
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">Masuk Aplikasi</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- HALAMAN UTAMA APLIKASI -->
+  <div id="appView" class="hidden">
+    <header class="topbar">
+      <div class="brand">
+        <strong>📁 Kontrol Berkas</strong>
+        <span id="roleBadge" class="badge"></span>
+        <span id="activeUserLabel" style="font-size: 0.85rem; color: var(--muted);"></span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span id="syncStatus" style="font-size: 0.8rem; color: var(--muted);">Tersimpan Lokal</span>
+        <button id="logoutBtn" class="btn-outline btn-sm">Keluar</button>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="scanTab">📷 Scan & Input Berkas</button>
+        <button class="tab-btn" data-tab="sheetTab">📊 Data Spreadsheet (<span id="rowCount">0</span>)</button>
+        <button id="adminTabBtn" class="tab-btn hidden" data-tab="adminTab">⚙️ Kustomisasi & Admin</button>
+      </div>
+
+      <div id="globalNotice" class="alert alert-success hidden"></div>
+
+      <!-- TAB 1: SCAN & INPUT -->
+      <section id="scanTab" class="tab-content">
+        <div class="grid-2">
+          <div class="card">
+            <h2>Scan QR Code (Kamera)</h2>
+            <div id="reader"></div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button id="startScanBtn" class="btn-primary btn-sm">Aktifkan Kamera</button>
+              <button id="stopScanBtn" class="btn-outline btn-sm">Matikan Kamera</button>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--muted); margin-top: 8px;">
+              Tip: Jika memakai QR / barcode scanner USB/Bluetooth, arahkan kursor ke kolom Barcode lalu scan langsung.
+            </p>
+
+            <div class="barcode-preview-box">
+              <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 6px;">Pratinjau Label QR Code</div>
+              <div id="liveQrBox" class="qr-render-box"></div>
+              <div id="liveBarcodeCaption" class="barcode-caption">Masukkan atau generate kode QR Code</div>
+              <div style="margin-top: 8px;">
+                <button type="button" id="printLiveLabelBtn" class="btn-outline btn-sm">🖨️ Cetak Label Ini</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Form Pencatatan Berkas</h2>
+
+            <div id="userPositionNotice" class="alert alert-info hidden"></div>
+            <div id="formAccessNotice" class="alert alert-warning hidden">
+              🔒 Form pencatatan berkas lengkap hanya dapat diisi atau diubah oleh role <strong>Validasi</strong> dan <strong>Admin</strong>.
+            </div>
+            <div id="duplicateWarningBox" class="alert alert-warning hidden"></div>
+
+            <form id="entryForm">
+              <div class="form-group">
+                <label for="barcodeInput">Kode QR Code / Nomor Berkas *</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="barcodeInput" placeholder="Scan QR, ketik, atau generate kode..." required />
+                  <button type="button" id="genCodeBtn" class="btn-outline btn-sm" style="white-space: nowrap;">⚡ Generate</button>
+                </div>
+              </div>
+
+              <div id="dynamicFormFields"></div>
+
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px;">
+                <button type="submit" id="saveEntryBtn" class="btn-success">💾 Simpan ke Spreadsheet</button>
+                <button type="reset" id="resetFormBtn" class="btn-outline">Reset</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: SPREADSHEET -->
+      <section id="sheetTab" class="tab-content hidden">
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" id="searchInput" placeholder="Cari barcode atau isi kolom..." style="max-width: 280px;" />
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button id="printSelectedBtn" class="btn-primary btn-sm">🏷️ Cetak Label Terpilih (<span id="selectedCount">0</span>)</button>
+              <button id="exportCsvBtn" class="btn-success btn-sm">⬇️ Download CSV / Excel</button>
+              <button id="pullSheetsBtn" class="btn-outline btn-sm">🔄 Tarik Data dari Sheets</button>
+              <button id="pushSheetsBtn" class="btn-outline btn-sm">☁️ Kirim ke Google Sheets</button>
+              <button id="clearAllBtn" class="btn-danger btn-sm hidden">🗑️ Hapus Semua Data</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead id="sheetHead"></thead>
+              <tbody id="sheetBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: ADMIN & KUSTOMISASI -->
+      <section id="adminTab" class="tab-content hidden">
+        <div class="grid-2">
+          <div class="card">
+            <h2>Manajemen User Terdaftar</h2>
+            <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
+              Tambah akun operator (nama & password), ubah password user terdaftar, atau hapus akses pengguna.
+            </p>
+
+            <form id="addUserForm" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 12px;">
+              <input type="text" id="newUserName" placeholder="Nama User (cth: Budi)" required />
+              <input type="text" id="newUserPass" placeholder="Password User" required />
+              <button type="submit" class="btn-primary">+ Tambah</button>
+            </form>
+
+            <div id="registeredUsersList"></div>
+          </div>
+
+          <div class="card">
+            <h2>Kustomisasi Kolom Berkas</h2>
+            <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
+              Tambah atau hapus kolom tambahan yang muncul di form input dan tabel spreadsheet.
+            </p>
+            <div id="customFieldsList"></div>
+
+            <form id="addFieldForm" style="display: flex; gap: 8px; margin-top: 12px;">
+              <input type="text" id="newFieldLabel" placeholder="Nama kolom baru (cth: Lokasi Rak, PIC)" required />
+              <button type="submit" class="btn-primary">+ Tambah</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 18px;">
+          <h2>Pengaturan Validasi, Password & Integrasi Google Sheets</h2>
+          <form id="settingsForm">
+            <div class="grid-2" style="margin-bottom: 0;">
+              <div class="form-group">
+                <label for="duplicateModeSetting">Aturan Duplikasi Barcode</label>
+                <select id="duplicateModeSetting">
+                  <option value="warn">Peringatan (Boleh disimpan setelah konfirmasi)</option>
+                  <option value="block">Blokir Otomatis (Tolak kode yang sudah ada)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="adminPassSetting">Password Role Admin</label>
+                <input type="text" id="adminPassSetting" required />
+              </div>
+              <div class="form-group">
+                <label for="validasiPassSetting">Password Role Validasi</label>
+                <input type="text" id="validasiPassSetting" required />
+              </div>
+              <div class="form-group">
+                <label for="userPassSetting">Password Bersama Role User (Opsional)</label>
+                <input type="text" id="userPassSetting" required />
+              </div>
+              <div class="form-group">
+                <label for="webhookUrlSetting">Google Apps Script Web App URL (Sinkronisasi Lintas Perangkat)</label>
+                <input type="url" id="webhookUrlSetting" placeholder="https://script.google.com/macros/s/.../exec" />
+              </div>
+            </div>
+            <button type="submit" class="btn-success">Simpan Pengaturan</button>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- MODAL PRATINJAU & CETAK LABEL -->
+  <div id="labelModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <h3 style="font-size: 1.05rem;">🏷️ Pratinjau Label QR Code</h3>
+        <button type="button" id="closeModalBtn" class="btn-outline btn-sm">✕ Tutup</button>
+      </div>
+
+      <div class="modal-controls">
+        <div style="min-width: 190px; flex: 1;">
+          <label for="labelSizeSelect">Ukuran Stiker Thermal / Kertas</label>
+          <select id="labelSizeSelect">
+            <option value="size-50x30">Thermal 50 × 30 mm (1 Label / Hal)</option>
+            <option value="size-60x40" selected>Thermal 60 × 40 mm (1 Label / Hal)</option>
+            <option value="size-80x50">Thermal 80 × 50 mm (1 Label / Hal)</option>
+            <option value="size-a4">Grid A4 / Kertas Biasa (2 Kolom)</option>
+          </select>
+        </div>
+        <div style="min-width: 110px;">
+          <label for="labelCopiesInput">Jumlah Salinan</label>
+          <input type="number" id="labelCopiesInput" min="1" max="50" value="1" />
+        </div>
+      </div>
+
+      <div id="modalLabelsContainer" class="labels-grid size-60x40"></div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+        <button type="button" id="triggerPrintBtn" class="btn-primary">🖨️ Cetak Label Sekarang</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AREA KHUSUS PRINT -->
+  <div id="printArea" class="hidden labels-grid size-60x40"></div>
+
+  <script>
+    const STORAGE_KEYS = {
+      records: 'kb_records_v1',
+      fields: 'kb_fields_v1',
+      config: 'kb_config_v1',
+      users: 'kb_users_v1'
+    };
+
+    const DEFAULT_FIELDS = [
+      { key: 'nama_berkas', label: 'Nama Berkas' },
+      { key: 'divisi', label: 'Divisi / Kategori' },
+      { key: 'status', label: 'Status' },
+      { key: 'keterangan', label: 'Keterangan' }
+    ];
+
+    const DEFAULT_CONFIG = {
+      adminPass: 'admin123',
+      validasiPass: 'validasi123',
+      userPass: 'user123',
+      webhookUrl: '',
+      duplicateMode: 'warn'
+    };
+
+    let currentUser = null;
+    let html5QrCode = null;
+    let isScanning = false;
+    let selectedIds = new Set();
+    let currentModalItems = [];
+    let lastPullTime = 0;
+
+    function isFullFormRole() {
+      return currentUser?.role === 'admin' || currentUser?.role === 'validasi';
+    }
+
+    function isScanPositionUserRole() {
+      return currentUser?.role === 'user';
+    }
+
+    function loadData(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? { ...structuredClone(fallback), ...JSON.parse(raw) } : structuredClone(fallback);
+      } catch {
+        return structuredClone(fallback);
+      }
+    }
+
+    function loadArrayData(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : structuredClone(fallback);
+      } catch {
+        return structuredClone(fallback);
+      }
+    }
+
+    function saveData(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    let records = loadArrayData(STORAGE_KEYS.records, []);
+    let fields = loadArrayData(STORAGE_KEYS.fields, DEFAULT_FIELDS);
+    let config = loadData(STORAGE_KEYS.config, DEFAULT_CONFIG);
+    let users = loadArrayData(STORAGE_KEYS.users, []);
+
+    function setSyncStatus(text) {
+      const el = document.getElementById('syncStatus');
+      if (el) el.textContent = text;
+    }
+
+    function showNotice(msg, type = 'success') {
+      const el = document.getElementById('globalNotice');
+      el.className = `alert alert-${type}`;
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.classList.add('hidden'), 3500);
+    }
+
+    async function postToCloud(payload) {
+      if (!config.webhookUrl) return false;
+      try {
+        await fetch(config.webhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        return true;
+      } catch (err) {
+        console.warn('Webhook error:', err);
+        return false;
+      }
+    }
+
+    async function syncUsersToCloud() {
+      if (!config.webhookUrl) return;
+      const ok = await postToCloud({ action: 'sync_users', users });
+      if (ok) setSyncStatus('User Tersinkron ke Cloud');
+    }
+
+    async function pullFromCloud(silent = false) {
+      if (!config.webhookUrl) {
+        if (!silent) showNotice('Atur Google Apps Script Web App URL terlebih dahulu di menu Admin.', 'error');
+        return false;
+      }
+      try {
+        const res = await fetch(`${config.webhookUrl}?action=pull_all&_t=${Date.now()}`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (data.ok === false) throw new Error(data.error || 'Respons gagal');
+
+        if (Array.isArray(data.users)) {
+          users = data.users;
+          saveData(STORAGE_KEYS.users, users);
+          if (currentUser?.role === 'admin') renderRegisteredUsersAdmin();
+        }
+        if (Array.isArray(data.records)) {
+          records = data.records;
+          saveData(STORAGE_KEYS.records, records);
+          if (currentUser) renderSpreadsheet();
+        }
+        lastPullTime = Date.now();
+        const jam = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        setSyncStatus(`Tersinkron (${jam})`);
+        if (!silent) showNotice('Data berkas & daftar user berhasil ditarik dari Google Sheets.');
+        return true;
+      } catch (err) {
+        console.warn('Pull cloud gagal:', err);
+        if (!silent) showNotice('Gagal menarik data dari Google Sheets. Pastikan Web App dapat diakses publik (Anyone).', 'error');
+        return false;
+      }
+    }
+
+    pullFromCloud(true);
+
+    function findDuplicateRecord(code) {
+      const target = String(code || '').trim().toLowerCase();
+      if (!target) return null;
+      return records.find(r => String(r.barcode || '').trim().toLowerCase() === target) || null;
+    }
+
+    function getPositionHistoryHtml(code) {
+      const target = String(code || '').trim().toLowerCase();
+      if (!target) return '-';
+      const matches = records.filter(r => String(r.barcode || '').trim().toLowerCase() === target);
+      if (!matches.length) return '-';
+
+      return matches.map((m) => {
+        const who = m.operator || m.input_role || '-';
+        const pos = m.status || '-';
+        const note = m.keterangan ? ` — <em>${escapeHtml(m.keterangan)}</em>` : '';
+        return `<div>• <b>${escapeHtml(who)}</b> (${escapeHtml(pos)})${note} <small style="color:var(--muted)">[${escapeHtml(m.waktu || '')}]</small></div>`;
+      }).join('');
+    }
+
+    function checkDuplicateUI() {
+      const code = document.getElementById('barcodeInput').value.trim();
+      const box = document.getElementById('duplicateWarningBox');
+      if (!isFullFormRole()) {
+        box.classList.add('hidden');
+        box.innerHTML = '';
+        return null;
+      }
+      const dup = findDuplicateRecord(code);
+
+      if (!dup) {
+        box.classList.add('hidden');
+        box.innerHTML = '';
+        return null;
+      }
+
+      const modeText = config.duplicateMode === 'block'
+        ? 'Mode saat ini: <strong>DIBLOKIR OTOMATIS</strong> (tidak dapat disimpan ganda).'
+        : 'Mode saat ini: <strong>PERINGATAN</strong> (perlu konfirmasi jika tetap ingin menyimpan).';
+
+      box.innerHTML = `
+        <strong>⚠️ Barcode Sudah Terdaftar!</strong> Kode <code>${escapeHtml(dup.barcode)}</code> sudah tercatat pada
+        <b>${escapeHtml(dup.waktu || '-')}</b> (${escapeHtml(dup.nama_berkas || 'Tanpa nama')}, status: <i>${escapeHtml(dup.status || '-')}</i>).<br/>
+        <span style="font-size:0.8rem;">${modeText}</span>
+      `;
+      box.classList.remove('hidden');
+      return dup;
+    }
+
+    function applyFormModeByRole() {
+      const fullAccess = isFullFormRole();
+      const isScanUser = isScanPositionUserRole();
+
+      document.getElementById('formAccessNotice').classList.add('hidden');
+      const posNotice = document.getElementById('userPositionNotice');
+      const barcodeInput = document.getElementById('barcodeInput');
+      const genBtn = document.getElementById('genCodeBtn');
+      const resetBtn = document.getElementById('resetFormBtn');
+      const saveBtn = document.getElementById('saveEntryBtn');
+
+      if (fullAccess) {
+        posNotice.classList.add('hidden');
+        barcodeInput.disabled = false;
+        genBtn.disabled = false;
+        resetBtn.disabled = false;
+        saveBtn.disabled = false;
+        document.querySelectorAll('#dynamicFormFields input, #dynamicFormFields select, #dynamicFormFields textarea').forEach((el) => {
+          el.disabled = false;
+        });
+        return;
+      }
+
+      if (isScanUser) {
+        const code = barcodeInput.value.trim();
+        const found = findDuplicateRecord(code);
+        if (code && found) {
+          posNotice.innerHTML = `✅ Barcode <code>${escapeHtml(found.barcode)}</code> (<b>${escapeHtml(found.nama_berkas || 'Berkas')}</b>) tercatat <strong>sudah di posisi ${escapeHtml(currentUser.name || 'User')}</strong>. Silakan tambahkan <strong>Keterangan</strong> lalu simpan.`;
+        } else if (code) {
+          posNotice.innerHTML = `📍 Barcode <code>${escapeHtml(code)}</code> ditandai <strong>sudah di posisi ${escapeHtml(currentUser.name || 'User')}</strong>. Silakan tambahkan <strong>Keterangan</strong> lalu simpan.`;
+        } else {
+          posNotice.innerHTML = `📷 Scan barcode berkas terlebih dahulu. Setelah ter-scan, berkas akan tercatat <strong>sudah di posisi ${escapeHtml(currentUser.name || 'User')}</strong> dan Anda dapat menambahkan <strong>Keterangan</strong>.`;
+        }
+        posNotice.classList.remove('hidden');
+
+        barcodeInput.disabled = true;
+        genBtn.disabled = true;
+        resetBtn.disabled = true;
+
+        document.querySelectorAll('#dynamicFormFields input, #dynamicFormFields select, #dynamicFormFields textarea').forEach((el) => {
+          const isKeterangan = el.name === 'keterangan';
+          el.disabled = !isKeterangan;
+        });
+        saveBtn.disabled = !code;
+      }
+    }
+
+    function handleScannedBarcodeForUser(decodedText) {
+      const code = String(decodedText || '').trim();
+      const barcodeInput = document.getElementById('barcodeInput');
+      barcodeInput.value = code;
+
+      const found = findDuplicateRecord(code);
+      if (found) {
+        fields.forEach((f) => {
+          const el = document.getElementById(`field_${f.key}`);
+          if (el && f.key !== 'keterangan') {
+            el.value = found[f.key] || '';
+          }
+        });
+      }
+
+      const ketEl = document.getElementById('field_keterangan');
+      if (ketEl) {
+        ketEl.value = '';
+        ketEl.disabled = false;
+      }
+
+      updateLiveBarcode();
+      applyFormModeByRole();
+      if (ketEl) ketEl.focus();
+      showNotice(`Barcode ${code} terbaca — tercatat di posisi ${currentUser.name}. Silakan isi keterangan.`);
+    }
+
+    // AUTH
+    document.getElementById('roleSelect').addEventListener('change', (e) => {
+      const isUserRole = e.target.value === 'user';
+      const userGroup = document.getElementById('loginUsernameGroup');
+      userGroup.classList.toggle('hidden', !isUserRole);
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const role = document.getElementById('roleSelect').value;
+      const usernameInput = document.getElementById('usernameInput').value.trim();
+      const pass = document.getElementById('passwordInput').value;
+      const errEl = document.getElementById('loginError');
+
+      if (role === 'admin') {
+        if (pass !== config.adminPass) {
+          errEl.textContent = 'Password salah untuk role Admin.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        currentUser = { role: 'admin', name: 'Admin' };
+      } else if (role === 'validasi') {
+        if (pass !== config.validasiPass) {
+          errEl.textContent = 'Password salah untuk role Validasi.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        currentUser = { role: 'validasi', name: 'Validator' };
+      } else {
+        if (usernameInput) {
+          let matchedUser = users.find(
+            u => u.username.toLowerCase() === usernameInput.toLowerCase() && u.password === pass
+          );
+          if (!matchedUser && config.webhookUrl) {
+            await pullFromCloud(true);
+            matchedUser = users.find(
+              u => u.username.toLowerCase() === usernameInput.toLowerCase() && u.password === pass
+            );
+          }
+          if (!matchedUser) {
+            errEl.textContent = 'Nama user atau password tidak cocok dengan akun terdaftar.';
+            errEl.classList.remove('hidden');
+            return;
+          }
+          currentUser = { role: 'user', name: matchedUser.username };
+        } else {
+          if (pass !== config.userPass) {
+            errEl.textContent = 'Password salah untuk role User (atau masukkan nama user terdaftar).';
+            errEl.classList.remove('hidden');
+            return;
+          }
+          currentUser = { role: 'user', name: 'Operator Umum' };
+        }
+      }
+
+      errEl.classList.add('hidden');
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('appView').classList.remove('hidden');
+      initAppUI();
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      stopCamera();
+      currentUser = null;
+      selectedIds.clear();
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('usernameInput').value = '';
+      document.getElementById('barcodeInput').value = '';
+      document.getElementById('appView').classList.add('hidden');
+      document.getElementById('loginView').classList.remove('hidden');
+    });
+
+    function initAppUI() {
+      const role = currentUser.role;
+      const isAdmin = role === 'admin';
+      const badge = document.getElementById('roleBadge');
+      badge.textContent = role.toUpperCase();
+      badge.className = `badge ${isAdmin ? 'badge-admin' : (role === 'validasi' ? 'badge-validasi' : 'badge-user')}`;
+      document.getElementById('activeUserLabel').textContent = currentUser.name ? `• ${currentUser.name}` : '';
+
+      document.getElementById('adminTabBtn').classList.toggle('hidden', !isAdmin);
+      document.getElementById('clearAllBtn').classList.toggle('hidden', !isAdmin);
+
+      renderDynamicForm();
+      applyFormModeByRole();
+      updateLiveBarcode();
+      checkDuplicateUI();
+      renderSpreadsheet();
+      if (isAdmin) {
+        renderRegisteredUsersAdmin();
+        renderCustomFieldsAdmin();
+        document.getElementById('duplicateModeSetting').value = config.duplicateMode || 'warn';
+        document.getElementById('adminPassSetting').value = config.adminPass;
+        document.getElementById('validasiPassSetting').value = config.validasiPass || 'validasi123';
+        document.getElementById('userPassSetting').value = config.userPass;
+        document.getElementById('webhookUrlSetting').value = config.webhookUrl || '';
+      }
+    }
+
+    // TABS + AUTO-REFRESH RINGAN SAAT BUKA SPREADSHEET
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.remove('hidden');
+        if (btn.dataset.tab === 'sheetTab') {
+          renderSpreadsheet();
+          if (config.webhookUrl && Date.now() - lastPullTime > 10000) {
+            await pullFromCloud(true);
+          }
+        }
+        if (btn.dataset.tab === 'scanTab') updateLiveBarcode();
+      });
+    });
+
+    // DYNAMIC FORM
+    function renderDynamicForm() {
+      const container = document.getElementById('dynamicFormFields');
+      container.innerHTML = '';
+      fields.forEach((f) => {
+        const div = document.createElement('div');
+        div.className = 'form-group';
+        if (f.key === 'status') {
+          div.innerHTML = `
+            <label for="field_${f.key}">${escapeHtml(f.label)}</label>
+            <select id="field_${f.key}" name="${f.key}">
+              <option value="Masuk / Tersimpan">Masuk / Tersimpan</option>
+              <option value="Keluar / Dipinjam">Keluar / Dipinjam</option>
+              <option value="Diarsipkan">Diarsipkan</option>
+            </select>
+          `;
+        } else {
+          div.innerHTML = `
+            <label for="field_${f.key}">${escapeHtml(f.label)}</label>
+            <input type="text" id="field_${f.key}" name="${f.key}" placeholder="Isi ${escapeHtml(f.label)}..." />
+          `;
+        }
+        container.appendChild(div);
+      });
+
+      const namaInput = document.getElementById('field_nama_berkas');
+      if (namaInput) namaInput.addEventListener('input', updateLiveBarcode);
+      applyFormModeByRole();
+    }
+
+    // CODE GENERATOR & PREVIEW
+    document.getElementById('genCodeBtn').addEventListener('click', () => {
+      if (!isFullFormRole()) return;
+      const now = new Date();
+      const ymd = now.toISOString().slice(0, 10).replace(/-/g, '');
+      let code = '';
+      do {
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        code = `BRK-${ymd}-${rand}`;
+      } while (findDuplicateRecord(code));
+
+      document.getElementById('barcodeInput').value = code;
+      updateLiveBarcode();
+      checkDuplicateUI();
+    });
+
+    document.getElementById('barcodeInput').addEventListener('input', () => {
+      updateLiveBarcode();
+      checkDuplicateUI();
+    });
+
+    // Self-contained QR Code SVG generator (Version 1-6, ECC Level M)
+    const PureQR = (function () {
+      const EXP = new Uint8Array(512);
+      const LOG = new Uint8Array(256);
+      let x = 1;
+      for (let i = 0; i < 255; i++) {
+        EXP[i] = x;
+        LOG[x] = i;
+        x <<= 1;
+        if (x & 0x100) x ^= 0x11d;
+      }
+      for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+
+      function gfMul(a, b) {
+        if (!a || !b) return 0;
+        return EXP[(LOG[a] + LOG[b]) % 255];
+      }
+
+      function rsDivisor(deg) {
+        let poly = [1];
+        for (let i = 0; i < deg; i++) {
+          const factor = [1, EXP[i]];
+          const next = new Array(poly.length + 1).fill(0);
+          for (let a = 0; a < poly.length; a++) {
+            for (let b = 0; b < 2; b++) {
+              next[a + b] ^= gfMul(poly[a], factor[b]);
+            }
+          }
+          poly = next;
+        }
+        return poly;
+      }
+
+      function rsRemainder(data, ecLen) {
+        const gen = rsDivisor(ecLen);
+        const buf = data.concat(new Array(ecLen).fill(0));
+        for (let i = 0; i < data.length; i++) {
+          const coef = buf[i];
+          if (coef !== 0) {
+            for (let j = 1; j < gen.length; j++) {
+              buf[i + j] ^= gfMul(gen[j], coef);
+            }
+          }
+        }
+        return buf.slice(data.length);
+      }
+
+      const SPECS = [
+        [1, 26, 10, 16],
+        [2, 44, 16, 28],
+        [3, 70, 26, 44],
+        [4, 100, 18, 64],
+        [5, 134, 24, 86],
+        [6, 172, 16, 108]
+      ];
+
+      function pickSpec(byteLen) {
+        for (const s of SPECS) {
+          if (s[3] - 2 >= byteLen) return s;
+        }
+        return SPECS[SPECS.length - 1];
+      }
+
+      function encodeBytes(text) {
+        const utf8 = new TextEncoder().encode(String(text));
+        const spec = pickSpec(utf8.length);
+        const [ver, totalCw, ecCw, dataCap] = spec;
+        const size = ver * 4 + 17;
+
+        const bits = [];
+        const pushBits = (val, len) => {
+          for (let i = len - 1; i >= 0; i--) bits.push((val >> i) & 1);
+        };
+
+        pushBits(0b0100, 4);
+        pushBits(Math.min(utf8.length, 255), 8);
+        for (let i = 0; i < utf8.length && bits.length + 8 <= dataCap * 8; i++) {
+          pushBits(utf8[i], 8);
+        }
+
+        const maxBits = dataCap * 8;
+        const remBits = maxBits - bits.length;
+        pushBits(0, Math.min(4, remBits));
+        while (bits.length % 8 !== 0 && bits.length < maxBits) bits.push(0);
+
+        const cw = [];
+        for (let i = 0; i + 7 < bits.length; i += 8) {
+          let b = 0;
+          for (let k = 0; k < 8; k++) b = (b << 1) | bits[i + k];
+          cw.push(b);
+        }
+        const pads = [0xec, 0x11];
+        let pIdx = 0;
+        while (cw.length < dataCap) {
+          cw.push(pads[pIdx % 2]);
+          pIdx++;
+        }
+
+        const ec = rsRemainder(cw, ecCw);
+        const finalStream = cw.concat(ec);
+        const streamBits = [];
+        for (const byteVal of finalStream) {
+          for (let i = 7; i >= 0; i--) streamBits.push((byteVal >> i) & 1);
+        }
+        while (streamBits.length < totalCw * 8) streamBits.push(0);
+
+        const grid = Array.from({ length: size }, () => new Int8Array(size));
+        const reserved = Array.from({ length: size }, () => new Uint8Array(size));
+
+        function setFunc(r, c, dark) {
+          if (r < 0 || r >= size || c < 0 || c >= size) return;
+          grid[r][c] = dark ? 1 : -1;
+          reserved[r][c] = 1;
+        }
+
+        function drawFinder(topR, leftC) {
+          for (let r = -1; r <= 7; r++) {
+            for (let c = -1; c <= 7; c++) {
+              const rr = topR + r;
+              const cc = leftC + c;
+              if (rr < 0 || rr >= size || cc < 0 || cc >= size) continue;
+              const inBox = r >= 0 && r <= 6 && c >= 0 && c <= 6;
+              const isBorder = r === 0 || r === 6 || c === 0 || c === 6;
+              const isCenter = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+              setFunc(rr, cc, inBox && (isBorder || isCenter));
+            }
+          }
+        }
+
+        drawFinder(0, 0);
+        drawFinder(0, size - 7);
+        drawFinder(size - 7, 0);
+
+        if (ver >= 2) {
+          const centers = { 2: [18], 3: [22], 4: [26], 5: [30], 6: [34] }[ver] || [];
+          for (const ar of centers) {
+            for (const ac of centers) {
+              if (reserved[ar][ac]) continue;
+              for (let dr = -2; dr <= 2; dr++) {
+                for (let dc = -2; dc <= 2; dc++) {
+                  const dark = Math.abs(dr) === 2 || Math.abs(dc) === 2 || (dr === 0 && dc === 0);
+                  setFunc(ar + dr, ac + dc, dark);
+                }
+              }
+            }
+          }
+        }
+
+        for (let i = 8; i < size - 8; i++) {
+          if (!reserved[6][i]) setFunc(6, i, i % 2 === 0);
+          if (!reserved[i][6]) setFunc(i, 6, i % 2 === 0);
+        }
+
+        setFunc(size - 8, 8, true);
+
+        for (let i = 0; i < 9; i++) {
+          if (i < size) {
+            if (!reserved[8][i]) reserved[8][i] = 2;
+            if (!reserved[i][8]) reserved[i][8] = 2;
+          }
+        }
+        for (let i = 0; i < 8; i++) {
+          if (size - 1 - i >= 0 && !reserved[8][size - 1 - i]) reserved[8][size - 1 - i] = 2;
+          if (size - 1 - i >= 0 && !reserved[size - 1 - i][8]) reserved[size - 1 - i][8] = 2;
+        }
+
+        let bitIdx = 0;
+        let goingUp = true;
+        for (let col = size - 1; col >= 1; col -= 2) {
+          if (col === 6) col = 5;
+          for (let step = 0; step < size; step++) {
+            const row = goingUp ? (size - 1 - step) : step;
+            for (const c of [col, col - 1]) {
+              if (reserved[row][c]) continue;
+              const b = bitIdx < streamBits.length ? streamBits[bitIdx++] : 0;
+              const masked = ((row + c) % 2 === 0) ? (b ^ 1) : b;
+              grid[row][c] = masked ? 1 : -1;
+            }
+          }
+          goingUp = !goingUp;
+        }
+
+        const fmtData = 0b00000;
+        let rem = fmtData << 10;
+        const gPoly = 0b10100110111;
+        for (let i = 14; i >= 10; i--) {
+          if ((rem >> i) & 1) rem ^= gPoly << (i - 10);
+        }
+        const fmtBits = ((fmtData << 10) | rem) ^ 0b101010000010010;
+
+        const getFmtBit = (k) => ((fmtBits >> (14 - k)) & 1) === 1;
+        const aroundA = [[0,8],[1,8],[2,8],[3,8],[4,8],[5,8],[7,8],[8,8],[8,7],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0]];
+        for (let k = 0; k < 15; k++) {
+          const [r, c] = aroundA[k];
+          grid[r][c] = getFmtBit(k) ? 1 : -1;
+        }
+        for (let k = 0; k < 8; k++) {
+          grid[size - 1 - k][8] = getFmtBit(k) ? 1 : -1;
+        }
+        for (let k = 8; k < 15; k++) {
+          grid[8][size - 15 + k] = getFmtBit(k) ? 1 : -1;
+        }
+
+        return { size, grid };
+      }
+
+      function toSvgElement(text, sizePx = 140) {
+        const { size, grid } = encodeBytes(text);
+        const quiet = 2;
+        const total = size + quiet * 2;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', `0 0 ${total} ${total}`);
+        svg.setAttribute('width', String(sizePx));
+        svg.setAttribute('height', String(sizePx));
+        svg.setAttribute('shape-rendering', 'crispEdges');
+        svg.style.width = sizePx + 'px';
+        svg.style.height = sizePx + 'px';
+        svg.style.display = 'block';
+
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', '0');
+        bg.setAttribute('y', '0');
+        bg.setAttribute('width', String(total));
+        bg.setAttribute('height', String(total));
+        bg.setAttribute('fill', '#ffffff');
+        svg.appendChild(bg);
+
+        let d = '';
+        for (let r = 0; r < size; r++) {
+          for (let c = 0; c < size; c++) {
+            if (grid[r][c] === 1) {
+              d += `M${c + quiet} ${r + quiet}h1v1h-1z`;
+            }
+          }
+        }
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('fill', '#0f172a');
+        svg.appendChild(path);
+        return svg;
+      }
+
+      return { toSvgElement };
+    })();
+
+    function getQrSizeByClass(sizeClass) {
+      if (sizeClass === 'size-50x30') return 64;
+      if (sizeClass === 'size-60x40') return 88;
+      if (sizeClass === 'size-80x50') return 112;
+      return 112;
+    }
+
+    function renderQrCodeBox(containerEl, codeText, sizePx = 148) {
+      if (!containerEl) return false;
+      containerEl.innerHTML = '';
+      const clean = String(codeText || '').trim();
+      if (!clean) return false;
+      try {
+        const svgEl = PureQR.toSvgElement(clean, sizePx);
+        containerEl.appendChild(svgEl);
+        return true;
+      } catch (err) {
+        console.warn('QR render error:', err);
+        return false;
+      }
+    }
+
+    function updateLiveBarcode() {
+      const code = document.getElementById('barcodeInput').value.trim();
+      const namaEl = document.getElementById('field_nama_berkas');
+      const nama = namaEl ? namaEl.value.trim() : '';
+      const qrBox = document.getElementById('liveQrBox');
+      const cap = document.getElementById('liveBarcodeCaption');
+
+      if (!code) {
+        if (qrBox) qrBox.innerHTML = '';
+        if (cap) cap.textContent = 'Masukkan atau generate kode QR Code';
+        return;
+      }
+
+      const ok = renderQrCodeBox(qrBox, code, 148);
+      if (cap) {
+        cap.textContent = ok ? `${code}${nama ? ' — ' + nama : ''}` : 'Gagal membuat QR Code';
+      }
+    }
+
+    document.getElementById('resetFormBtn').addEventListener('click', () => {
+      if (!isFullFormRole()) return;
+      setTimeout(() => {
+        updateLiveBarcode();
+        checkDuplicateUI();
+      }, 0);
+    });
+
+    document.getElementById('printLiveLabelBtn').addEventListener('click', () => {
+      const code = document.getElementById('barcodeInput').value.trim();
+      if (!code) {
+        showNotice('Isi atau generate kode barcode terlebih dahulu sebelum mencetak label.', 'error');
+        return;
+      }
+      const rowData = { barcode: code };
+      fields.forEach((f) => {
+        const el = document.getElementById(`field_${f.key}`);
+        rowData[f.key] = el ? el.value.trim() : '';
+      });
+      openLabelModal([rowData]);
+    });
+
+    // SAVE ENTRY
+    document.getElementById('entryForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const barcode = document.getElementById('barcodeInput').value.trim();
+      if (!barcode) return;
+
+      if (isScanPositionUserRole()) {
+        const ketEl = document.getElementById('field_keterangan');
+        const keterangan = ketEl ? ketEl.value.trim() : '';
+        const existing = findDuplicateRecord(barcode);
+        const posisiText = `Sudah di posisi ${currentUser.name}`;
+
+        const row = {
+          id: 'REC-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
+          waktu: new Date().toLocaleString('id-ID'),
+          barcode,
+          nama_berkas: existing?.nama_berkas || '',
+          divisi: existing?.divisi || '',
+          status: posisiText,
+          keterangan,
+          operator: currentUser.name,
+          input_role: currentUser.role
+        };
+
+        fields.forEach((f) => {
+          if (f.key !== 'keterangan' && f.key !== 'status') {
+            row[f.key] = existing?.[f.key] || '';
+          }
+        });
+
+        records.unshift(row);
+        saveData(STORAGE_KEYS.records, records);
+        renderSpreadsheet();
+        showNotice(`Berkas [${barcode}] tercatat ${posisiText}.`);
+
+        if (config.webhookUrl) {
+          const ok = await postToCloud({ action: 'append_record', row });
+          if (ok) setSyncStatus('Terkirim ke Google Sheets');
+        }
+
+        document.getElementById('barcodeInput').value = '';
+        if (ketEl) ketEl.value = '';
+        updateLiveBarcode();
+        applyFormModeByRole();
+        return;
+      }
+
+      if (!isFullFormRole()) {
+        showNotice('Akses ditolak: hanya role Validasi dan Admin yang dapat mengisi form pencatatan.', 'error');
+        return;
+      }
+
+      const existing = findDuplicateRecord(barcode);
+      if (existing) {
+        if (config.duplicateMode === 'block') {
+          showNotice(`Barcode [${barcode}] ditolak karena sudah terdaftar di spreadsheet.`, 'error');
+          return;
+        }
+        const proceed = confirm(
+          `Barcode "${barcode}" sudah pernah tercatat (${existing.waktu || '-'} - ${existing.nama_berkas || 'Tanpa nama'}). Tetap simpan sebagai entri baru?`
+        );
+        if (!proceed) return;
+      }
+
+      const row = {
+        id: 'REC-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
+        waktu: new Date().toLocaleString('id-ID'),
+        barcode,
+        operator: currentUser.name || currentUser.role,
+        input_role: currentUser.role
+      };
+
+      fields.forEach((f) => {
+        const el = document.getElementById(`field_${f.key}`);
+        row[f.key] = el ? el.value.trim() : '';
+      });
+
+      records.unshift(row);
+      saveData(STORAGE_KEYS.records, records);
+      renderSpreadsheet();
+      showNotice(`Berkas [${barcode}] berhasil disimpan ke spreadsheet.`);
+
+      if (config.webhookUrl) {
+        const ok = await postToCloud({ action: 'append_record', row });
+        if (ok) setSyncStatus('Terkirim ke Google Sheets');
+      }
+
+      e.target.reset();
+      updateLiveBarcode();
+      checkDuplicateUI();
+      document.getElementById('barcodeInput').focus();
+    });
+
+    // SPREADSHEET RENDER
+    function updateSelectedCount() {
+      document.getElementById('selectedCount').textContent = selectedIds.size;
+    }
+
+    function renderSpreadsheet() {
+      const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      const isAdmin = currentUser?.role === 'admin';
+      document.getElementById('rowCount').textContent = records.length;
+      updateSelectedCount();
+
+      const headers = ['Pilih', 'Waktu', 'Barcode', ...fields.map(f => f.label), 'Riwayat Posisi', 'Operator', 'Role', 'Label'];
+      if (isAdmin) headers.push('Aksi');
+
+      document.getElementById('sheetHead').innerHTML =
+        `<tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`;
+
+      const filtered = records.filter((r) => {
+        if (!query) return true;
+        return Object.values(r).some(v => String(v).toLowerCase().includes(query));
+      });
+
+      const tbody = document.getElementById('sheetBody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${headers.length}" style="text-align:center; color:var(--muted);">Belum ada data berkas.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((r) => {
+        const checkedAttr = selectedIds.has(r.id) ? 'checked' : '';
+        const cols = [
+          `<td><input type="checkbox" class="row-check" data-id="${r.id}" ${checkedAttr} /></td>`,
+          `<td>${escapeHtml(r.waktu || '')}</td>`,
+          `<td><strong>${escapeHtml(r.barcode || '')}</strong></td>`,
+          ...fields.map(f => `<td>${escapeHtml(r[f.key] || '')}</td>`),
+          `<td class="history-cell">${getPositionHistoryHtml(r.barcode)}</td>`,
+          `<td>${escapeHtml(r.operator || r.input_role || '')}</td>`,
+          `<td>${escapeHtml(r.input_role || '')}</td>`,
+          `<td><button type="button" class="btn-outline btn-sm" onclick="printRowLabel('${r.id}')">🖨️ Label</button></td>`
+        ];
+        if (isAdmin) {
+          cols.push(`<td><button type="button" class="btn-danger btn-sm" onclick="deleteRecord('${r.id}')">Hapus</button></td>`);
+        }
+        return `<tr>${cols.join('')}</tr>`;
+      }).join('');
+
+      document.querySelectorAll('.row-check').forEach((cb) => {
+        cb.addEventListener('change', (e) => {
+          const id = e.target.dataset.id;
+          if (e.target.checked) selectedIds.add(id);
+          else selectedIds.delete(id);
+          updateSelectedCount();
+        });
+      });
+    }
+
+    window.printRowLabel = function (id) {
+      const rec = records.find(r => r.id === id);
+      if (rec) openLabelModal([rec]);
+    };
+
+    document.getElementById('printSelectedBtn').addEventListener('click', () => {
+      const chosen = records.filter(r => selectedIds.has(r.id));
+      if (chosen.length === 0) {
+        showNotice('Centang minimal satu baris berkas terlebih dahulu untuk mencetak label.', 'error');
+        return;
+      }
+      openLabelModal(chosen);
+    });
+
+    function renderLabelsPreviewAndPrint() {
+      const sizeClass = document.getElementById('labelSizeSelect').value;
+      const copies = Math.max(1, Math.min(50, parseInt(document.getElementById('labelCopiesInput').value, 10) || 1));
+      const modalContainer = document.getElementById('modalLabelsContainer');
+      const printGrid = document.getElementById('printArea');
+
+      const allSizes = ['size-50x30', 'size-60x40', 'size-80x50', 'size-a4'];
+      [modalContainer, printGrid].forEach((el) => {
+        allSizes.forEach(s => el.classList.remove(s));
+        el.classList.add(sizeClass);
+      });
+
+      const expanded = [];
+      currentModalItems.forEach((item) => {
+        for (let c = 0; c < copies; c++) expanded.push(item);
+      });
+
+      const qrSize = getQrSizeByClass(sizeClass);
+
+      function populate(target) {
+        target.innerHTML = '';
+        expanded.forEach((item, idx) => {
+          const card = document.createElement('div');
+          card.className = 'print-label';
+
+          const title = document.createElement('div');
+          title.className = 'print-label-title';
+          title.textContent = item.nama_berkas || item.barcode || 'Berkas';
+
+          const qrHolder = document.createElement('div');
+          qrHolder.className = 'qr-render-box';
+          qrHolder.id = `lbl_${target.id}_${idx}`;
+
+          const sub = document.createElement('div');
+          sub.className = 'print-label-sub';
+          const infoParts = [item.barcode, item.divisi, item.status].filter(Boolean);
+          sub.textContent = infoParts.join(' • ') || (item.waktu || '');
+
+          card.appendChild(title);
+          card.appendChild(qrHolder);
+          card.appendChild(sub);
+          target.appendChild(card);
+
+          renderQrCodeBox(qrHolder, item.barcode, qrSize);
+        });
+      }
+
+      populate(modalContainer);
+      populate(printGrid);
+    }
+
+    function openLabelModal(items) {
+      currentModalItems = items;
+      renderLabelsPreviewAndPrint();
+      document.getElementById('labelModal').classList.remove('hidden');
+    }
+
+    document.getElementById('labelSizeSelect').addEventListener('change', renderLabelsPreviewAndPrint);
+    document.getElementById('labelCopiesInput').addEventListener('input', renderLabelsPreviewAndPrint);
+
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+      document.getElementById('labelModal').classList.add('hidden');
+    });
+
+    document.getElementById('triggerPrintBtn').addEventListener('click', () => {
+      const printArea = document.getElementById('printArea');
+      printArea.classList.remove('hidden');
+      window.print();
+      setTimeout(() => printArea.classList.add('hidden'), 300);
+    });
+
+    window.deleteRecord = async function (id) {
+      if (currentUser?.role !== 'admin') return;
+      records = records.filter(r => r.id !== id);
+      selectedIds.delete(id);
+      saveData(STORAGE_KEYS.records, records);
+      renderSpreadsheet();
+      checkDuplicateUI();
+      if (config.webhookUrl) {
+        await postToCloud({ action: 'delete_record', id });
+      }
+      showNotice('Baris data dihapus.', 'info');
+    };
+
+    document.getElementById('searchInput').addEventListener('input', renderSpreadsheet);
+
+    document.getElementById('clearAllBtn').addEventListener('click', async () => {
+      if (currentUser?.role !== 'admin') return;
+      if (!confirm('Yakin ingin menghapus seluruh data spreadsheet?')) return;
+      records = [];
+      selectedIds.clear();
+      saveData(STORAGE_KEYS.records, records);
+      renderSpreadsheet();
+      checkDuplicateUI();
+      if (config.webhookUrl) {
+        await postToCloud({ action: 'clear_records' });
+      }
+      showNotice('Semua data berhasil dihapus.', 'info');
+    });
+
+    // EXPORT CSV
+    document.getElementById('exportCsvBtn').addEventListener('click', () => {
+      const headers = ['Waktu', 'Barcode', ...fields.map(f => f.label), 'Operator', 'Role'];
+      const lines = [headers.map(csvEscape).join(',')];
+
+      records.forEach((r) => {
+        const vals = [r.waktu, r.barcode, ...fields.map(f => r[f.key] || ''), r.operator || r.input_role, r.input_role];
+        lines.push(vals.map(csvEscape).join(','));
+      });
+
+      const bom = '\uFEFF';
+      const blob = new Blob([bom + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `kontrol-berkas-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function csvEscape(v) {
+      const s = String(v ?? '').replace(/"/g, '""');
+      return `"${s}"`;
+    }
+
+    // PULL & PUSH GOOGLE SHEETS
+    document.getElementById('pullSheetsBtn').addEventListener('click', () => pullFromCloud(false));
+
+    document.getElementById('pushSheetsBtn').addEventListener('click', async () => {
+      if (!config.webhookUrl) {
+        showNotice('Atur Google Apps Script Web App URL terlebih dahulu di menu Admin.', 'error');
+        return;
+      }
+      const ok = await postToCloud({ action: 'bulk_sync', rows: records, users });
+      if (ok) {
+        setSyncStatus('Terkirim ke Google Sheets');
+        showNotice('Data berkas & daftar user dikirim ke Google Sheets.');
+      } else {
+        showNotice('Gagal mengirim ke Google Sheets.', 'error');
+      }
+    });
+
+    // ADMIN REGISTERED USERS
+    function renderRegisteredUsersAdmin() {
+      const list = document.getElementById('registeredUsersList');
+      if (users.length === 0) {
+        list.innerHTML = `<p style="font-size:0.85rem; color:var(--muted);">Belum ada user terdaftar. Tambahkan di form di atas.</p>`;
+        return;
+      }
+
+      list.innerHTML = users.map((u, idx) => `
+        <div class="field-item">
+          <div>
+            <strong>${escapeHtml(u.username)}</strong><br/>
+            <small style="color:var(--muted)">Password: <code>${escapeHtml(u.password)}</code></small>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="btn-outline btn-sm" onclick="editUserPassword(${idx})">✏️ Ubah Password</button>
+            <button type="button" class="btn-danger btn-sm" onclick="removeUser(${idx})">Hapus</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.editUserPassword = async function (idx) {
+      if (currentUser?.role !== 'admin') return;
+      const target = users[idx];
+      if (!target) return;
+
+      const newPass = prompt(`Masukkan password baru untuk user "${target.username}":`, target.password);
+      if (newPass === null) return;
+      const trimmed = newPass.trim();
+      if (!trimmed) {
+        showNotice('Password baru tidak boleh kosong.', 'error');
+        return;
+      }
+
+      users[idx].password = trimmed;
+      saveData(STORAGE_KEYS.users, users);
+      renderRegisteredUsersAdmin();
+      await syncUsersToCloud();
+      showNotice(`Password untuk "${target.username}" berhasil diperbarui.`);
+    };
+
+    window.removeUser = async function (idx) {
+      if (currentUser?.role !== 'admin') return;
+      const removed = users[idx]?.username;
+      if (!confirm(`Hapus akses untuk user "${removed}"?`)) return;
+      users.splice(idx, 1);
+      saveData(STORAGE_KEYS.users, users);
+      renderRegisteredUsersAdmin();
+      await syncUsersToCloud();
+      showNotice(`User "${removed}" dihapus.`, 'info');
+    };
+
+    document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (currentUser?.role !== 'admin') return;
+      const username = document.getElementById('newUserName').value.trim();
+      const password = document.getElementById('newUserPass').value.trim();
+      if (!username || !password) return;
+
+      const exists = users.some(u => u.username.toLowerCase() === username.toLowerCase());
+      if (exists) {
+        showNotice(`Nama user "${username}" sudah terdaftar.`, 'error');
+        return;
+      }
+
+      users.push({ id: 'USR-' + Date.now(), username, password });
+      saveData(STORAGE_KEYS.users, users);
+      document.getElementById('newUserName').value = '';
+      document.getElementById('newUserPass').value = '';
+      renderRegisteredUsersAdmin();
+      await syncUsersToCloud();
+      showNotice(`User "${username}" berhasil ditambahkan.`);
+    });
+
+    // ADMIN CUSTOMIZE FIELDS
+    function renderCustomFieldsAdmin() {
+      const list = document.getElementById('customFieldsList');
+      list.innerHTML = fields.map((f, idx) => `
+        <div class="field-item">
+          <span><strong>${escapeHtml(f.label)}</strong> <small style="color:var(--muted)">(${f.key})</small></span>
+          <button class="btn-danger btn-sm" onclick="removeField(${idx})">Hapus</button>
+        </div>
+      `).join('');
+    }
+
+    window.removeField = function (idx) {
+      if (currentUser?.role !== 'admin') return;
+      fields.splice(idx, 1);
+      saveData(STORAGE_KEYS.fields, fields);
+      renderCustomFieldsAdmin();
+      renderDynamicForm();
+      updateLiveBarcode();
+      renderSpreadsheet();
+      showNotice('Kolom dihapus.');
+    };
+
+    document.getElementById('addFieldForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (currentUser?.role !== 'admin') return;
+      const label = document.getElementById('newFieldLabel').value.trim();
+      if (!label) return;
+      const key = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') + '_' + Date.now().toString().slice(-3);
+      fields.push({ key, label });
+      saveData(STORAGE_KEYS.fields, fields);
+      document.getElementById('newFieldLabel').value = '';
+      renderCustomFieldsAdmin();
+      renderDynamicForm();
+      updateLiveBarcode();
+      renderSpreadsheet();
+      showNotice(`Kolom "${label}" ditambahkan.`);
+    });
+
+    // ADMIN SETTINGS
+    document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (currentUser?.role !== 'admin') return;
+      config.duplicateMode = document.getElementById('duplicateModeSetting').value || 'warn';
+      config.adminPass = document.getElementById('adminPassSetting').value.trim() || 'admin123';
+      config.validasiPass = document.getElementById('validasiPassSetting').value.trim() || 'validasi123';
+      config.userPass = document.getElementById('userPassSetting').value.trim() || 'user123';
+      config.webhookUrl = document.getElementById('webhookUrlSetting').value.trim();
+      saveData(STORAGE_KEYS.config, config);
+      checkDuplicateUI();
+      await syncUsersToCloud();
+      showNotice('Pengaturan Validasi, Password & Integrasi tersimpan.');
+    });
+
+    // CAMERA BARCODE SCANNER
+    document.getElementById('startScanBtn').addEventListener('click', async () => {
+      if (isScanning) return;
+      try {
+        if (!html5QrCode) html5QrCode = new Html5Qrcode('reader');
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 210, height: 210 } },
+          (decodedText) => {
+            if (isScanPositionUserRole()) {
+              handleScannedBarcodeForUser(decodedText);
+            } else {
+              document.getElementById('barcodeInput').value = decodedText;
+              updateLiveBarcode();
+              checkDuplicateUI();
+              showNotice(`Barcode terbaca: ${decodedText}`);
+            }
+            stopCamera();
+          },
+          () => {}
+        );
+        isScanning = true;
+      } catch (err) {
+        showNotice('Kamera tidak dapat diakses. Pastikan izin kamera aktif atau gunakan HTTPS/localhost.', 'error');
+      }
+    });
+
+    async function stopCamera() {
+      if (html5QrCode && isScanning) {
+        try {
+          await html5QrCode.stop();
+        } catch {}
+        isScanning = false;
+      }
+    }
+
+    document.getElementById('stopScanBtn').addEventListener('click', stopCamera);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateLiveBarcode();
+    });
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g,
